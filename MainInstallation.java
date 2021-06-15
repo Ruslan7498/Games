@@ -29,64 +29,81 @@ class MainInstallation {
     public static final String FILE_ZIP = "save.zip";
 
     public static void main(String[] args) {
-        //Создание директроий
+        StringBuilder log = new StringBuilder();   
+        //Создание корневой директроий
         File dirGames = new File(DIR_GAMES);
-        File dirSrc = new File(dirGames, DIR_SRC);
-        File dirRes = new File(dirGames, DIR_RES);
-        File dirSaveGames = new File(dirGames, DIR_SAVE);
-        File dirTemp = new File(dirGames, DIR_TEMP);
-        File dirMain = new File(dirSrc, DIR_MAIN);
-        File dirTest = new File(dirSrc, DIR_TEST);
-        File dirDraw = new File(dirRes, DIR_DRAW);
-        File dirVectors = new File(dirRes, DIR_VECTORS);
-        File dirIcons = new File(dirRes, DIR_ICONS);
-        //Создание файлов
-        File fileMain = new File(dirMain, FILE_MAIN);
-        File fileUtils = new File(dirMain, FILE_UTILS);
-        File fileTemp = new File(dirTemp, FILE_TEMP);
-        File fileSave1 = new File(dirSaveGames, FILE_SAVE1);
-        File fileSave2 = new File(dirSaveGames, FILE_SAVE2);
-        File fileSave3 = new File(dirSaveGames, FILE_SAVE3);
-        File fileZip = new File(dirSaveGames, FILE_ZIP);
+        if (dirGames.mkdir()) addLog(log, dirGames);
+        //Создание директроий и добавление информации о них
+        File dirSrc = makeDir(dirGames, DIR_SRC);
+        addLog(log, dirSrc);
+        File dirRes = makeDir(dirGames, DIR_RES);
+        addLog(log, dirRes);
+        File dirSaveGames = makeDir(dirGames, DIR_SAVE);
+        addLog(log, dirSaveGames);
+        File dirTemp = makeDir(dirGames, DIR_TEMP);
+        addLog(log, dirTemp);
+        File dirMain = makeDir(dirSrc, DIR_MAIN);
+        addLog(log, dirMain);
+        File dirTest = makeDir(dirSrc, DIR_TEST);
+        addLog(log, dirTest);
+        File dirDraw = makeDir(dirRes, DIR_DRAW);
+        addLog(log, dirDraw);
+        File dirVectors = makeDir(dirRes, DIR_VECTORS);
+        addLog(log, dirVectors);
+        File dirIcons = makeDir(dirRes, DIR_ICONS);
+        addLog(log, dirIcons);
+        //Создание файлов и добавление информации о них
+        File fileMain = makeFile(dirMain, FILE_MAIN);
+        addLog(log, fileMain);
+        File fileUtils = makeFile(dirMain, FILE_UTILS);
+        addLog(log, fileUtils);
         //Создание игровых событий
         GameProgress gameProgress1 = new GameProgress(85, 340, 3, 45.5);
         GameProgress gameProgress2 = new GameProgress(80, 270, 5, 40.2);
         GameProgress gameProgress3 = new GameProgress(65, 110, 2, 25.1);
+        // Создание файлов сохранений
+        File fileSave1 = makeFile(dirSaveGames, FILE_SAVE1);
+        saveGame(fileSave1, gameProgress1);
+        File fileSave2 = makeFile(dirSaveGames, FILE_SAVE2);
+        saveGame(fileSave2, gameProgress2);
+        File fileSave3 = makeFile(dirSaveGames, FILE_SAVE3);
+        saveGame(fileSave3, gameProgress3);
+        File fileZip = makeFile(dirSaveGames, FILE_ZIP);
+        // Создание списка сохраненных файлов
         List<File> listFileSave = new ArrayList<File>();
+        listFileSave.add(fileSave1);
+        listFileSave.add(fileSave2);
+        listFileSave.add(fileSave3);
 
-        StringBuilder log = new StringBuilder();
-        if (dirGames.mkdir()) addLog(log, dirGames);
-        if (dirSrc.mkdir()) addLog(log, dirSrc);
-        if (dirRes.mkdir()) addLog(log, dirRes);
-        if (dirSaveGames.mkdir()) addLog(log, dirSaveGames);
-        if (dirTemp.mkdir()) addLog(log, dirTemp);
-        if (dirMain.mkdir()) addLog(log, dirMain);
-        if (dirTest.mkdir()) addLog(log, dirTest);
-        if (dirDraw.mkdir()) addLog(log, dirDraw);
-        if (dirVectors.mkdir()) addLog(log, dirVectors);
-        if (dirIcons.mkdir()) addLog(log, dirIcons);
-
-
+        File fileTemp = new File(dirTemp, FILE_TEMP);
         try (FileWriter fileWriter = new FileWriter(fileTemp, false)) {
-            if (fileMain.createNewFile()) addLog(log, fileMain);
-            if (fileUtils.createNewFile()) addLog(log, fileUtils);
             if (fileTemp.exists()) addLog(log, fileTemp);
-            if (fileSave1.createNewFile()) saveGame(fileSave1, gameProgress1);
-            if (fileSave2.createNewFile()) saveGame(fileSave2, gameProgress2);
-            if (fileSave3.createNewFile()) saveGame(fileSave3, gameProgress3);
-            listFileSave.add(fileSave1);
-            listFileSave.add(fileSave2);
-            listFileSave.add(fileSave3);
-            if (fileZip.createNewFile()) zipFiles(fileZip, listFileSave);
-            for (File file : listFileSave) file.delete();
-            openZip(fileZip, dirSaveGames);
-            openProgress(listFileSave);
             String logFile = log.toString();
             fileWriter.write(logFile);
             fileWriter.flush();
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
+        zipFiles(fileZip, listFileSave);
+        for (File file : listFileSave) file.delete();
+        openZip(fileZip, dirSaveGames);
+        openProgress(listFileSave);
+    }
+
+    private static File makeDir(File dirPath, String dirName) {
+        File dirNew = new File(dirPath, dirName);
+	dirNew.mkdir();
+        return dirNew;
+    }
+
+    private static File makeFile(File filePath, String fileName) {
+        File fileNew = new File(filePath, fileName);
+        try {
+	    fileNew.createNewFile();
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+        return fileNew;
     }
 
     public static StringBuilder addLog(StringBuilder log, File file) {
@@ -109,7 +126,6 @@ class MainInstallation {
     }
 
     public static void zipFiles(File zip, List<File> listFileSave) {
-
         try (ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(zip))) {
             for (File save : listFileSave) {
                 try (FileInputStream fis = new FileInputStream(save)) {
